@@ -7,6 +7,9 @@ from duckduckgo_search import DDGS
 import openai
 import time
 import tiktoken
+from fastapi.responses import StreamingResponse
+import json
+import asyncio
 
 app = FastAPI()
 
@@ -25,6 +28,7 @@ class ChatCompletionRequest(BaseModel):
     messages: List[ChatMessage]
     temperature: Optional[float] = 0.7
     max_tokens: Optional[int] = None
+    stream: Optional[bool] = False
 
 class ChatCompletionResponse(BaseModel):
     id: str = Field(default_factory=lambda: f"chatcmpl-{int(time.time())}")
@@ -90,6 +94,37 @@ def count_tokens(text: str, model: str = "gpt-4") -> int:
         encoding = tiktoken.get_encoding("cl100k_base")
         return len(encoding.encode(text))
 
+async def create_stream_response(response_text: str, request: ChatCompletionRequest):
+    """Generate streaming response chunks."""
+    # Split response into words/chunks for streaming
+    chunks = response_text.split()
+    
+    for i, chunk in enumerate(chunks):
+        is_last = i == len(chunks) - 1
+        chunk_data = {
+            "id": f"chatcmpl-{int(time.time())}",
+            "object": "chat.completion.chunk",
+            "created": int(time.time()),
+            "model": request.model,
+            "system_fingerprint": "fp_44709d6fcb",
+            "choices": [{
+                "index": 0,
+                "delta": {
+                    "role": "assistant" if i == 0 else None,
+                    "content": chunk + (" " if not is_last else "")
+                },
+                "finish_reason": "stop" if is_last else None
+            }]
+        }
+        
+        yield f"data: {json.dumps(chunk_data)}\n\n"
+        
+        if not is_last:
+            await asyncio.sleep(0.02)  # Add small delay between chunks
+    
+    # Send the final [DONE] message
+    yield "data: [DONE]\n\n"
+
 @app.post("/v1/chat/completions")
 async def create_chat_completion(request: ChatCompletionRequest):
     print(request)
@@ -104,16 +139,21 @@ async def create_chat_completion(request: ChatCompletionRequest):
         # Get the last user message
         last_message = request.messages[-1].content
         
-        # Count prompt tokens
-        prompt_tokens = sum(count_tokens(msg.content, request.model) for msg in request.messages)
-        
         # Run the agent
         result = await ai_agent.run(last_message, deps=deps)
         
-        # Count completion tokens
+        # Handle streaming response
+        if request.stream:
+            return StreamingResponse(
+                create_stream_response(result.data.response, request),
+                media_type="text/event-stream"
+            )
+        
+        # Count tokens for non-streaming response
+        prompt_tokens = sum(count_tokens(msg.content, request.model) for msg in request.messages)
         completion_tokens = count_tokens(result.data.response, request.model)
         
-        # Format response like OpenAI's API
+        # Format regular response
         response = ChatCompletionResponse(
             model=request.model,
             choices=[{
@@ -138,7 +178,6 @@ async def create_chat_completion(request: ChatCompletionRequest):
         )
 
         print(response)
-
         return response
 
     except Exception as e:
