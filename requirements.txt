@@ -1,8 +1,8 @@
-fastapi
-uvicorn
-pydantic
-pydantic-ai
-openai
-python-dotenv
-duckduckgo-search 
-tiktoken
+fastapi==0.111.1
+uvicorn==0.32.1
+pydantic==2.10.6
+pydantic-ai==0.0.24
+openai==1.63.2
+python-dotenv==1.0.0
+duckduckgo-search==7.2.1
+tiktoken==0.9.0
