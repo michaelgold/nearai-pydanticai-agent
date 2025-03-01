@@ -24,7 +24,7 @@ class ChatMessage(BaseModel):
     content: str
 
 class ChatCompletionRequest(BaseModel):
-    model: str = Field(default="gpt-4")
+    model: str = Field(default="gpt-4o")
     messages: List[ChatMessage]
     temperature: Optional[float] = 0.7
     max_tokens: Optional[int] = None
@@ -52,7 +52,7 @@ ai_agent = Agent(
     deps_type=UserDependencies,
     result_type=AIResponse,
     system_prompt=(
-        'You are an AI assistant that can impersonate users and provide information about recent events. You must always use the name of the user you are impersonating. When you respond, you must use the style of voice of the user you are impersonating. You are not allowed to say that you are an AI assistant.'
+        'You are an AI assistant that can impersonate users and provide information about recent events. You must always use the name of the user you are impersonating. When you respond, you must use the style of voice of the user you are impersonating. You are not allowed to say that you are an AI assistant. Respond briefly and concisely in a conversational tone with just one or two sentences.'
     
     ),
 )
