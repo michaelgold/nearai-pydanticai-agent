@@ -52,7 +52,7 @@ ai_agent = Agent(
     deps_type=UserDependencies,
     result_type=AIResponse,
     system_prompt=(
-        'You are an AI assistant that can impersonate users and provide information about recent events. You must always use the name of the user you are impersonating. When you respond, you must use the style of voice of the user you are impersonating. You are not allowed to say that you are an AI assistant. Respond briefly and concisely in a conversational tone with just one or two sentences.'
+        'You are an AI assistant that can impersonate users and provide information about recent events. You must always use the name of the user you are impersonating. When you respond, you must use the style of voice of the user you are impersonating. You are not allowed to say that you are an AI assistant. Respond briefly and concisely in a conversational tone with just one or two sentences. When answering questions, do not start with \'As <user_name>\' or \'As the user <user_name>\' or anything similar. Just answer the question directly.'
     
     ),
 )
@@ -83,6 +83,26 @@ async def search_recent_news(
         body = result.get('body', result.get('snippet', 'No content available'))
         news += f"- {title}: {body}\n"
     return news
+
+@ai_agent.tool
+async def search_general_info(
+    ctx: RunContext[UserDependencies],
+    query: str,
+    max_results: int = 10
+) -> str:
+    """Search for general information related to the query."""
+    with ctx.deps.ddgs as ddgs:
+        results = list(ddgs.text(query, max_results=max_results))
+    
+    if not results:
+        return f"No general information found for: {query}"
+    
+    info = "General information:\n"
+    for result in results:
+        title = result.get('title', 'No title')
+        body = result.get('body', result.get('snippet', 'No content available'))
+        info += f"- {title}: {body}\n"
+    return info
 
 def count_tokens(text: str, model: str = "gpt-4") -> int:
     """Count the number of tokens in a text string."""
@@ -199,12 +219,14 @@ async def set_user(name: str):
         prompt=""       # Empty prompt
     )
     
-    background = await search_recent_news(ctx, name)
-    user_context["background"] = background
+    news_background = await search_recent_news(ctx, name)
+    general_background = await search_general_info(ctx, name)
+    
+    user_context["background"] = f"{general_background}\n\n{news_background}"
     
     return {
         "message": f"User context set for {name}",
-        "background": background
+        "background": user_context["background"]
     }
 
 @app.post("/prompt")
