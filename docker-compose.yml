@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    env_file:
+      - .env
+    container_name: fastapi_app
+    restart: always
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    networks:
+      - app_network
+
+  caddy:
+    image: caddy:2.7-alpine
+    container_name: caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"  # Only needed in production
+    volumes:
+      # Use environment variable to choose the Caddyfile
+      - ./Caddyfile.${ENVIRONMENT:-local}:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config: 

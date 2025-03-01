@@ -1,0 +1,8 @@
+{
+    auto_https off
+    admin off
+}
+
+:80 {
+    reverse_proxy fastapi_app:8000
+} 

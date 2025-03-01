@@ -1,0 +1,11 @@
+{
+    # Disable automatic HTTPS for local development
+    auto_https off
+    # Disable admin API to avoid certificate-related errors
+    admin off
+}
+
+:80 {
+    # Route all traffic to your FastAPI app
+    reverse_proxy fastapi_app:8000
+} 
