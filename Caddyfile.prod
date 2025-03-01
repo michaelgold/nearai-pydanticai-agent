@@ -1,32 +1,22 @@
 eth.mike.gold {
-    handle_path /* {
-        header Access-Control-Allow-Origin "*"
-        header Access-Control-Allow-Methods "*"
-        header Access-Control-Allow-Headers "*"
-        header Access-Control-Allow-Credentials "true"
-        
-        reverse_proxy app:8000
-    }
+    handle /* {
+        reverse_proxy app:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+        }
 
-    reverse_proxy app:8000 {
-        header_up Host {host}
-        header_up X-Real-IP {remote}
-        header_up X-Forwarded-For {remote}
-        header_up X-Forwarded-Proto {scheme}
-    }
-
-    # Add CORS headers
-    header {
-        Access-Control-Allow-Origin *
-        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-        Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization"
-        Access-Control-Allow-Credentials true
-        Access-Control-Max-Age 3600
-        # Add security headers
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        X-XSS-Protection "1; mode=block"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
+        header {
+            Access-Control-Allow-Origin "*"
+            Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+            Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization"
+            Access-Control-Allow-Credentials "true"
+            Access-Control-Max-Age "3600"
+            
+            Strict-Transport-Security "max-age=31536000; includeSubDomains"
+            X-XSS-Protection "1; mode=block"
+            X-Content-Type-Options "nosniff"
+            X-Frame-Options "DENY"
+        }
     }
 
     log {
@@ -37,4 +27,4 @@ eth.mike.gold {
     tls {
         protocols tls1.2 tls1.3
     }
-} 
+}
