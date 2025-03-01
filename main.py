@@ -6,6 +6,7 @@ from pydantic_ai import Agent, RunContext
 from duckduckgo_search import DDGS
 import openai
 import time
+import tiktoken
 
 app = FastAPI()
 
@@ -30,8 +31,9 @@ class ChatCompletionResponse(BaseModel):
     object: str = "chat.completion"
     created: int = Field(default_factory=lambda: int(time.time()))
     model: str
+    system_fingerprint: str = Field(default="fp_44709d6fcb")
     choices: List[dict]
-    usage: dict
+    usage: dict = Field(default_factory=dict)
 
 class AIResponse(BaseModel):
     response: str = Field(description='Response to the user query')
@@ -78,8 +80,19 @@ async def search_recent_news(
         news += f"- {title}: {body}\n"
     return news
 
+def count_tokens(text: str, model: str = "gpt-4") -> int:
+    """Count the number of tokens in a text string."""
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+        return len(encoding.encode(text))
+    except KeyError:
+        # Fallback to cl100k_base encoding if model not found
+        encoding = tiktoken.get_encoding("cl100k_base")
+        return len(encoding.encode(text))
+
 @app.post("/v1/chat/completions")
 async def create_chat_completion(request: ChatCompletionRequest):
+    print(request)
     try:
         # Create dependencies
         deps = UserDependencies(
@@ -90,10 +103,16 @@ async def create_chat_completion(request: ChatCompletionRequest):
 
         # Get the last user message
         last_message = request.messages[-1].content
-
+        
+        # Count prompt tokens
+        prompt_tokens = sum(count_tokens(msg.content, request.model) for msg in request.messages)
+        
         # Run the agent
         result = await ai_agent.run(last_message, deps=deps)
-
+        
+        # Count completion tokens
+        completion_tokens = count_tokens(result.data.response, request.model)
+        
         # Format response like OpenAI's API
         response = ChatCompletionResponse(
             model=request.model,
@@ -101,16 +120,24 @@ async def create_chat_completion(request: ChatCompletionRequest):
                 "index": 0,
                 "message": {
                     "role": "assistant",
-                    "content": result.data.response  # Access through result.data
+                    "content": result.data.response
                 },
+                "logprobs": None,
                 "finish_reason": "stop"
             }],
             usage={
-                "prompt_tokens": 0,  # You might want to implement token counting
-                "completion_tokens": 0,
-                "total_tokens": 0
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
+                "completion_tokens_details": {
+                    "reasoning_tokens": 0,
+                    "accepted_prediction_tokens": 0,
+                    "rejected_prediction_tokens": 0
+                }
             }
         )
+
+        print(response)
 
         return response
 

@@ -5,3 +5,4 @@ pydantic-ai
 openai
 python-dotenv
 duckduckgo-search 
+tiktoken
