@@ -5,12 +5,18 @@ eth.mike.gold {
             header_up X-Real-IP {remote}
         }
 
+        @options {
+            method OPTIONS
+        }
+        respond @options 204
+
+
         header {
-            Access-Control-Allow-Origin "*"
+            Access-Control-Allow-Origin *
             Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-            Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization"
-            Access-Control-Allow-Credentials "true"
+            Access-Control-Allow-Headers "Content-Type, Authorization"
             Access-Control-Max-Age "3600"
+            Access-Control-Allow-Credentials true
             
             Strict-Transport-Security "max-age=31536000; includeSubDomains"
             X-XSS-Protection "1; mode=block"
