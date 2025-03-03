@@ -1,4 +1,4 @@
-version: '3.8'
+# Remove or comment out the "version" line if it exists
 
 services:
   app:
