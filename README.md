@@ -1,7 +1,7 @@
-# NearAI FastAPI Chatbot
+# NearAI PydanticAI Agent
 
 ## Overview
-This repository contains a FastAPI-based chatbot that integrates with **Near AI's** inference API using `pydantic-ai` and `OpenAIModel`. It leverages **FastAPI**, **DuckDuckGo Search**, and **NEAR AI's** Llama-based models for enhanced AI interactions. The chatbot provides real-time AI-generated responses, impersonation capabilities, and tools for retrieving recent news or general information.
+This repository contains a FastAPI-based Agent that integrates with **Near AI's** inference API using `pydantic-ai` and `OpenAIModel`. It leverages **FastAPI**, **DuckDuckGo Search**, and **NEAR AI's** Llama-based models for enhanced AI interactions. The chatbot provides real-time AI-generated responses, impersonation capabilities, and tools for retrieving recent news or general information.
 
 ## Features
 - 🚀 **FastAPI-powered**: High-performance, asynchronous chatbot API.
